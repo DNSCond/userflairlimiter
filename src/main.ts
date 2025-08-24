@@ -47,25 +47,28 @@ Devvit.addTrigger({
 
     const templateId: string | undefined = event.post?.linkFlair?.templateId;
     if (templateId === undefined) return;
-    // let postFlairs = await context.settings.get('onlyOnUpdate');
     let postFlairs = await context.settings.get('onlyOnSubmit');
     if (typeof postFlairs !== 'string') return;
     postFlairs = postFlairs.split(/[,\s]+/).filter(s => s.length > 0);
     if (postFlairs.length > 0 && context.subredditName && event.author?.name && event.post) {
-      const isMod = (await context.reddit.getModerators({ subredditName: context.subredditName }).all()).map(u => u.username).includes(event.author.name);
-      if (isMod) return;
-      const item = await context.reddit.getPostById(event.post.id),
-        action = (await context.settings.get('remove_report') ?? []) as string[],
-        reason = ((await context.settings.get('message')) ?? 'Your Post has been removed because a flair was changed against the rules.') as string;
+      if (postFlairs.includes(templateId)) {
+        const isMod = (await context.reddit.getModerators({ subredditName: context.subredditName }).all()).map(u => u.username).includes(event.author.name);
+        if (isMod) return;
+        const item = await context.reddit.getPostById(event.post.id),
+          action = (await context.settings.get('remove_report') ?? []) as string[];
+        const text = ((await context.settings.get('message')) ?? 'Your Post has been removed because a flair was changed against the rules.') as string;
 
-      if (action.includes('remove')) {
-        context.reddit.submitComment({
-          id: item.id, text: reason,
-        });
-        item.remove();
-        return;
-      } else {
-        context.reddit.report(item, { reason });
+        if (await context.settings.get('comment')) {
+          (await context.reddit.submitComment({
+            id: item.id, text,
+          })).distinguish(true);
+        }
+        if (action.includes('remove')) {
+          item.remove();
+        } else if (action.includes('report')) {
+          const reason = text;
+          context.reddit.report(item, { reason });
+        }
       }
     }
   },
@@ -100,7 +103,7 @@ Devvit.addTrigger({
         if (action.includes('remove')) {
           item.remove();
         } else if (action.includes('report')) {
-          const reason = `${text}`;
+          const reason = text;
           context.reddit.report(item, { reason });
         }
       }
