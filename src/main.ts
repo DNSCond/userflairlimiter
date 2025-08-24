@@ -93,9 +93,9 @@ Devvit.addTrigger({
         const text = ((await context.settings.get('message')) ?? 'Your Post has been removed because a flair was changed against the rules.') as string;
 
         if (await context.settings.get('comment')) {
-          context.reddit.submitComment({
+          (await context.reddit.submitComment({
             id: item.id, text,
-          });
+          })).distinguish(true);
         }
         if (action.includes('remove')) {
           item.remove();

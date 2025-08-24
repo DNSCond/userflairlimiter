@@ -1,3 +1,3 @@
-a private app for r/drawmypc's flair rules.
+a private app for r/drawmyoc's flair rules.
 
 this soon should be a flair assistant fork
